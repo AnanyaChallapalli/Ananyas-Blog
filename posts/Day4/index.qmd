@@ -1,0 +1,227 @@
+---
+title: "Day4 (Quantities)"
+author: "Ananya C"
+format: html
+editor: visual
+---
+
+```{r}
+library(tidyverse)
+library(mosaic)
+library(ggformula)
+library(skimr)
+library(crosstable)
+
+
+```
+
+```{r}
+diamonds
+```
+
+```{r}
+glimpse(diamonds)
+```
+
+```{r}
+skim(diamonds)
+```
+
+```{r}
+inspect(diamonds)
+```
+
+```{r}
+gf_histogram(~price, data = diamonds) %>%
+  gf_labs(
+    title = "Plot 1A: Diamond Prices",
+    caption = "ggformula"
+  )
+```
+
+```{r}
+gf_histogram(~price,
+  data = diamonds,
+  bins = 100
+) %>%
+  gf_labs(
+    title = "Plot 1B: Diamond Prices",
+    caption = "ggformula"
+  )
+```
+
+```{r}
+diamonds %>%
+  gf_histogram(~carat) %>%
+  gf_labs(
+    title = "Plot 2A: Carats of Diamonds",
+    caption = "ggformula")
+  
+```
+
+```{r}
+diamonds %>%
+  gf_histogram(~carat,
+    bins = 100
+  ) %>%
+  gf_labs(
+    title = "Plot 2B: Carats of Diamonds",
+    caption = "ggformula"
+  )
+```
+
+```{r}
+gf_histogram(~price, fill = ~cut, data = diamonds) %>%
+  gf_labs(title = "Plot 3A: Diamond Prices", caption = "ggformula")
+```
+
+```{r}
+diamonds %>%
+  gf_histogram(~price, fill = ~cut, color = "black", alpha = 0.3) %>%
+  gf_labs(
+    title = "Plot 3B: Prices by Cut",
+    caption = "ggformula"
+  )
+
+```
+
+what is 'alpha=0.3'?
+
+```{r}
+diamonds %>%
+  gf_histogram(~price, fill = ~cut, color = "black", alpha = 0.3) %>%
+  gf_facet_wrap(~cut) %>%
+  gf_labs(
+    title = "Plot 3C: Prices by Filled and Facetted by Cut",
+    caption = "ggformula"
+  ) %>%
+  gf_theme(theme(
+    axis.text.x = element_text(
+      angle = 45,
+      hjust = 1
+    )
+  ))
+```
+
+```{r}
+diamonds %>%
+  gf_histogram(~price, fill = ~cut, color = "black", alpha = 0.1) %>%
+  gf_facet_wrap(~cut, scales = "free_y", nrow = 2) %>%
+  gf_labs(
+    title = "Plot 3D: Prices Filled and Facetted by Cut",
+    subtitle = "Free y-scale",
+    caption = "ggformula"
+  ) %>%
+  gf_theme(theme(
+    axis.text.x =
+      element_text(
+        angle = 45,
+        hjust = 1
+      )
+  ))
+```
+
+```{r}
+race_df <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-10-26/race.csv")
+rank_df <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-10-26/ultra_rankings.csv")
+```
+
+```{r}
+glimpse(race_df)
+```
+
+```{r}
+glimpse(rank_df)
+```
+
+```{r}
+race_df %>% 
+  mosaic::favstats(~distance,data= .)
+```
+
+```{r}
+rank_df %>%
+  drop_na() %>%
+  favstats(time_in_seconds ~ gender, data = .)
+```
+
+```{r}
+crosstable(time_in_seconds + age ~ gender, data = rank_df) %>%
+  crosstable::as_flextable()
+```
+
+```{r}
+race_df %>% 
+  count(country) %>% 
+  arrange(desc(n))
+
+```
+
+```{r}
+race_df %>%
+  count(country) %>%
+  arrange(desc(n))
+
+
+```
+
+```{r}
+rank_df %>%
+  count(nationality) %>%
+  arrange(desc(n))
+```
+
+```{r}
+rank_df %>%
+  filter(rank %in% c(1, 2, 3)) %>%
+  count(nationality) %>%
+  arrange(desc(n))
+```
+
+```{r}
+longest_races <- race_df %>%
+  slice_max(n = 5, order_by = distance) # Longest distance races
+longest_races
+longest_races %>%
+  left_join(., rank_df, by = "race_year_id") %>% # total participants in longest 4 races
+  filter(rank %in% c(1:10)) %>% # Top 10 ranks
+  count(nationality) %>%
+  arrange(desc(n))
+```
+
+```{r}
+rank_df %>%
+  gf_histogram(~time_in_seconds, bins = 75) %>%
+  gf_labs(title = "Histogram of Race Times")
+```
+
+```{r}
+race_df %>%
+  gf_histogram(~distance, bins = 50) %>%
+  gf_labs(title = "Histogram of Race Distances")
+
+```
+
+```{r}
+race_times <- race_df %>%
+  count(start_time) %>%
+  arrange(desc(n))
+race_times
+```
+
+```{r}
+pop <- read_csv(file="../../data/populations.csv")
+pop
+```
+
+```{r}
+gf_histogram(~value, data = pop, title = "Long Tailed Histogram")
+##
+gf_density(~value, data = pop, title = "Long Tailed Density")
+```
+
+```{r}
+gf_histogram(~ log10(value), data = pop, title = "Histogram with Log transformed x-variable")
+##
+gf_density(~ log10(value), data = pop, title = "Density with Log transformed x-variable")
+```

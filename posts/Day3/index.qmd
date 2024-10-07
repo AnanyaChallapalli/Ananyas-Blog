@@ -2,6 +2,8 @@
 title: "Class3: Counts and Stuff"
 ---
 
+## Setup
+
 ```{r}
 #| label: setup
 library(knitr)
@@ -12,6 +14,8 @@ library(skimr)
 library(kableExtra)
 library(mosaic)
 ```
+
+## Examining Taxi Dataset
 
 ```{r}
 taxi <- read.csv("https://vincentarelbundock.github.io/Rdatasets/csv/modeldata/taxi.csv")
@@ -56,6 +60,8 @@ taxi_modified <- taxi %>%
   )
 taxi_modified %>% glimpse()
 ```
+
+## Plotting Barcharts for Taxi Dataset
 
 ```{r}
 gf_bar(~tip, fill = ~local, data = taxi_modified, position = "dodge") %>%
@@ -153,4 +159,123 @@ gf_bar(~substance,data = mosaicData::HELPrct) %>%
 ```{r}
 gf_bar(~substance, fill= ~sex, data=HELPrct)
 
+```
+
+# Your Turn Section
+
+## Examining Birthdays Dataset
+
+```{r}
+titanic <-read_csv(file = "../../data/titanic.csv")
+titanic
+```
+
+```{r}
+glimpse(titanic)
+```
+
+```{r}
+skim(titanic)
+```
+
+```{r}
+inspect(titanic)
+```
+
+```{r}
+titanic_modified <- titanic %>%
+  mutate(
+    survived = factor(`survived`,
+      levels = c("0", "1"),
+      labels = c("no","yes"),
+      ordered = TRUE
+    ),
+    ##
+    pclass = factor(`pclass`,
+      levels = c("1","2","3"),
+      labels = c("1","2","3"),
+      ordered = TRUE
+    ),
+    ##
+    sex = factor(sex,
+      levels = c("female","male"),
+      labels = c("female","male"),
+      ordered = TRUE
+    )
+  )
+titanic_modified %>% glimpse()
+```
+
+```{r}
+gf_bar(~pclass, data = titanic_modified) %>%
+  gf_labs(title = "Members of Each Class") %>% 
+  gf_theme(theme(axis.text.x = element_text(size = 6, angle = 45, hjust = 1)))
+```
+
+there were there classes of passengers a majority belonging to third class.
+
+```{r}
+gf_bar(~survived, data = titanic_modified) %>%
+  gf_labs(title = "Count of Surviors") %>% 
+  gf_theme(theme(axis.text.x = element_text(size = 6, angle = 45, hjust = 1)))
+```
+
+A majority of the passengers did not survive.
+
+```{r}
+gf_bar(~sex, data = titanic_modified,
+       fill=~survived) %>%
+  gf_labs(title = "Number of Survivors of Men and Women") %>% 
+  gf_theme(theme(axis.text.x = element_text(size = 6, angle = 45, hjust = 1)))
+```
+
+```{r}
+gf_bar(~sex, data = titanic_modified,
+       fill=~survived,
+       position="fill") %>%
+  gf_labs(title = "Proportion of Survivors of Men and Women") %>% 
+  gf_theme(theme(axis.text.x = element_text(size = 6, angle = 45, hjust = 1)))
+```
+
+there were many more female survivors than male
+
+```{r}
+gf_bar(~pclass, data = titanic_modified,
+       fill=~survived) %>%
+  gf_labs(title = "Number of Survivors of Different Classes") %>% 
+  gf_theme(theme(axis.text.x = element_text(size = 6, angle = 45, hjust = 1)))
+```
+
+```{r}
+gf_bar(~pclass, data = titanic_modified,
+       fill=~survived,
+       position="fill") %>%
+  gf_labs(title = "Proportion of Survivors of Different Classes") %>% 
+  gf_theme(theme(axis.text.x = element_text(size = 6, angle = 45, hjust = 1)))
+```
+
+Even though first class has much fewer passengers than third class, it has the highest number of survivors.
+
+```{r}
+gf_bar(~parch, data = titanic_modified,
+       fill=~survived,
+       position="stack") %>%
+  gf_labs(title = "Survivors based on number of parents on board") %>% 
+  gf_theme(theme(axis.text.x = element_text(size = 6, angle = 45, hjust = 1)))
+```
+
+```{r}
+gf_bar(~sibsp, data = titanic_modified,
+       fill=~survived,
+       position="stack") %>%
+  gf_labs(title = "Survivors based on Siblings on board") %>% 
+  gf_theme(theme(axis.text.x = element_text(size = 6, angle = 45, hjust = 1)))
+```
+
+```{r}
+gf_bar(~pclass|sex, data = titanic_modified,
+       fill=~survived,
+       position="stack") %>%
+  gf_labs(title = "Surviors based on Class and Gender") %>% 
+  gf_theme(theme(axis.text.x = element_text(size = 6, angle = 45, hjust = 1)))
 ```

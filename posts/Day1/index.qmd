@@ -1,0 +1,42 @@
+---
+title: "My name is Ananya"
+author: "Ananya C"
+---
+
+## Introduction
+
+This is a silly little piece I am writing in Arvind's class. My back is hurting but I'm learning things so that's cool.
+
+### My First Piece of R Code
+
+babynames - table of all babynames in the us from 1880 to 2017
+
+babynames shift+ctrl+M filter(name=="Aditi")
+
+```{r}
+#| label: setup
+library(tidyverse)
+library(ggformula)
+library(babynames)
+```
+
+```{r}
+babynames
+```
+
+```{r}
+babynames %>% filter(name == "Ananya")
+```
+
+```{r}
+babynames %>% filter(name== "Ananya") %>% 
+  gf_line(n ~ year)
+```
+
+There were no Ananyas before 1995 :(
+
+Also, my back and stomach stopped hurting :D
+
+```{r}
+babynames %>% filter(name == "Anoushka" | name == "Anushka")
+```

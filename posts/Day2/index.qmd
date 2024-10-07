@@ -63,47 +63,6 @@ mpg_modified <- mpg %>%
 glimpse(mpg_modified)
 ```
 
-## Practicing with babynames Dataset
-
-```{r}
-babynames
-```
-
-```{r}
-glimpse(babynames)
-```
-
-```{r}
-inspect(babynames)
-
-```
-
-```{r}
-skimr::skim(babynames)
-```
-
-```{r}
-babynames_modified <- babynames %>% 
-  dplyr::mutate(
-```
-
-```{r}
-
-```
-
-```{sex = as_factor(sex))}
-glimpse(babynames_modified)
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
 Always close the previous qmd file to avoid cross-contamination of packages.
 
 ```{r}
@@ -121,18 +80,6 @@ mpg %>% group_by(manufacturer) %>% summarize(mean_mileage_manf = mean(cty))
 ```
 
 ## Analysing Math Anxiety Data
-
-```{r}
-math_anxiety <- read_
-```
-
-```{r}
-
-```
-
-```{r}
-inspect(math_anxiety)
-```
 
 ```{r}
 math_anxiety <-read_delim(file = "../../data/MathAnxiety.csv",delim=";")

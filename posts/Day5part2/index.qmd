@@ -1,0 +1,132 @@
+---
+title: "Change"
+author: "Ananya C"
+---
+
+```{r}
+library(tidyverse)
+library(ggformula)
+library(mosaic)
+library(skimr)
+library(kableExtra)
+
+library(GGally)
+library(corrplot)
+library(ggExtra)
+
+library(devtools)
+devtools::install_github("rpruim/Lock5withR")
+library(Lock5withR)
+library(palmerpenguins)
+
+library(easystats)
+library(correlation)
+```
+
+```{r}
+HollywoodMovies2011 -> movies
+glimpse(movies)
+```
+
+```{r}
+movies %>%
+  gf_point(DomesticGross ~ WorldGross) %>%
+  gf_lm() %>%
+  gf_labs(
+    title = "Scatter Plot",
+    subtitle = "Movie Gross Earnings: Domestics vs World"
+  )
+
+```
+
+```{r}
+movies %>%
+  gf_point(Profitability ~ OpeningWeekend) %>%
+  gf_lm() %>%
+  gf_labs(
+    title = "Scatter Plot",
+    subtitle = "Movies: Does Opening Week Earnings indicate Profitability?"
+  )
+```
+
+```{r}
+movies %>%
+  gf_point(RottenTomatoes ~ AudienceScore) %>%
+  gf_lm() %>%
+  gf_labs(
+    title = "Scatter Plot",
+    subtitle = "Movie Ratings: Tomatoes vs Audience"
+  )
+```
+
+```{r}
+movies %>%
+  drop_na() %>%
+  gf_point(RottenTomatoes ~ AudienceScore,
+    color = ~Genre
+  ) %>%
+  gf_lm() %>%
+  gf_labs(
+    title = "Scatter Plot",
+    subtitle = "Movie Ratings: Trends by Genre"
+  )
+```
+
+```{r}
+GGally::ggpairs(
+  movies %>% drop_na(),
+  # Select Quant variables only for now
+  columns = c(
+    "RottenTomatoes", "AudienceScore", "DomesticGross", "ForeignGross"
+  ),
+  switch = "both",
+  # axis labels in more traditional locations(left and bottom)
+
+  progress = FALSE,
+  # no compute progress messages needed
+
+  # Choose the diagonal graphs (always single variable! Think!)
+  diag = list(continuous = "barDiag"),
+  # choosing histogram,not density
+
+  # Choose lower triangle graphs, two-variable graphs
+  lower = list(continuous = wrap("smooth", alpha = 0.3, se = FALSE)),
+  title = "Movies Data Correlations Plot #1"
+)
+```
+
+```{r}
+GGally::ggpairs(
+  movies %>% drop_na(),
+  # Select Quant variables only for now
+  columns = c(
+    "Budget", "Profitability", "DomesticGross", "ForeignGross"
+  ),
+  switch = "both",
+  # axis labels in more traditional locations(left and bottom)
+
+  progress = FALSE,
+  # no compute progress messages needed
+
+  # Choose the diagonal graphs (always single variable! Think!)
+  diag = list(continuous = "barDiag"),
+  # choosing histogram,not density
+
+  # Choose lower triangle graphs, two-variable graphs
+  lower = list(continuous = wrap("smooth", alpha = 0.3, se = FALSE)),
+  title = "Movies Data Correlations Plot #2"
+)
+```
+
+```{r}
+mosaic::cor_test(Profitability ~ Budget, data = movies) %>%
+  broom::tidy() %>%
+  knitr::kable(
+    digits = 2,
+    caption = "Movie Profitability vs Budget"
+  )
+```
+
+```{r}
+glimpse(mtcars)
+```

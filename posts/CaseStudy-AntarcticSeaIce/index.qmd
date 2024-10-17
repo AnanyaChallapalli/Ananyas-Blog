@@ -1,0 +1,244 @@
+---
+title: "Case Study- Antarctic Sea Ice"
+---
+
+```{r}
+library(tidyverse)
+library(mosaic)
+library(skimr)
+library(ggformula)
+library(tidyverse)
+library(ggprism)
+```
+
+```{r}
+ice <-readxl::read_xlsx("../../data/ice.xlsx")
+ice
+```
+
+```{r}
+ice %>%
+  # Select columns
+  # Rename some while selecting !!
+  select("month" = ...1, "day" = ...2, c(4:49)) %>%
+  # Fill the month column! Yes!!
+  tidyr::fill(month) %>%
+  # Make Wide Data into Long
+  pivot_longer(
+    cols = -c(month, day),
+    names_to = "series",
+    values_to = "values"
+  ) %>%
+  # Regular Munging
+  mutate(
+    series = as.integer(series),
+    month = factor(month,
+      levels = month.name,
+      labels = month.name,
+      ordered = TRUE
+    ),
+    # Note munging for date!!
+    # Using the lubridate package, part of tidyverse
+    date = lubridate::make_date(
+      year = series,
+      month = month,
+      day = day
+    )
+  ) -> ice_prepared
+
+ice_prepared
+```
+
+## Data Dictionary
+
+### Quantitative Variables
+
+-   series-contains years
+
+-   values-numerical data
+
+-   date-represents dates
+
+### Qualitative Variables
+
+-   month
+
+-   day
+
+### Target Variable
+
+-   values
+
+### Predictor Variables
+
+-   month
+
+-   day
+
+-   series
+
+-   date
+
+### Research Experiment
+
+What is the change in the antarctic ice area over the years for the different months of the year?
+
+### Hypothesis
+
+The antarctic ice area will show variations with the maximum during winter months. The ice area will probably deplete over the years due to global warming or depending on the climate during that year.
+
+### Questions based on the graph
+
+What is the overall trend in Antarctic ice area over the years?
+
+What are the typical ranges of ice area for each month?
+
+Are there any significant outliers or unusual events in the ice area data, particularly in 2023?
+
+### Questions
+
+-   Identify the type of charts - Box Plot
+
+-   Identify the variables used for various geometrical aspects (x, y, fill…). Name the variables appropriately - x-month, y- Ice Extent in million sqkm, fill- year
+
+-   What research activity might have been carried out to obtain the data graphed here? Provide some details
+
+    They likely collected data on the Antarctic ice area over the years 1990-2023 and monitored how it was affected by climate, season, etc.
+
+-   What might the red points represent?
+
+    The red points represent the year 2023. In most cases, it is an outlier except in December where it is found within the boundries of the box
+
+-   What is perhaps a befuddling aspect of this graph until you…Ohhh!!!!!!
+
+## Gender at the Workplace
+
+```{r}
+gender <-read_delim("../../data/job_gender_data.csv")
+gender
+
+```
+
+```{r}
+gender %>%
+  gf_point(total_earnings ~ percent_female, 
+           size = ~ total_workers,  
+           alpha = 0.8) %>% 
+  gf_lm() %>%
+  gf_labs(
+    title = "Salaries and Gender Proportion in the Workforce",
+    subtitle = "Total Earnings vs Percentage of Female Workers"
+  )
+```
+
+## Data Dictionary
+
+### Qualitative
+
+-   year
+
+-   occupation
+
+-   major_category
+
+-   minor_category
+
+### Quantitative
+
+-   total_workers
+
+-   workers_male
+
+-   workers_female
+
+-   percent_female
+
+-   total_earnings - total earnings of workers
+
+-   total_earnings_male
+
+-   total_earnings_female
+
+-   wage_percent_of_male
+
+## Target Variable
+
+-   percentage_of_female
+
+-   total_earnings_female
+
+-   wage_percent_of_male
+
+## Predictor variables
+
+-   year
+
+-   occupation
+
+-   major_category
+
+-   minor_category
+
+<!-- -->
+
+-   total_workers
+
+-   workers_male
+
+-   workers_female
+
+-   percent_female
+
+-   total_earnings
+
+-   total_earnings_male
+
+## Research Experiment
+
+The experiment aims to assess whether gender plays a role in determining salary or not, and to identify any trends or patterns across various occupations in terms of gender distribution and compensation.
+
+## Questions Graph seeks to answer
+
+-   Is there a correlation between the percentage of female workers in an occupation and the median salary?
+
+-   Are occupations with a higher proportion of female workers associated with lower salaries?
+
+### Questions
+
+-   What kind of chart is used in the figure?
+
+    Scatter plot
+
+-   What geometries have been used and to which variables have these geometries been mapped?
+
+    x-axis - Represents the **percentage of the workforce reported as female**
+
+    y-axis - Represents the **median salary in the occupation**
+
+    size of the bubble - Corresponds to the **total number of workers** in the occupation
+
+-   Based on this graph, do you think gender plays a role in salaries? What is the trend you see?
+
+    In general, higher percentage of females corresponds to lower salaries. Higher salaries are associated with lower percentage of female workers. In general, smaller workforces have higher salaries
+
+-   If SALARY, NO_OF_WORKERS, GENDER, OCCUPATION were available in the original dataset, what pre-processing would have been necessary to obtain this plot?
+
+    Group by occupation
+
+    Then summarize the median salary for each occupation
+
+    Calculate the percentage of female workers
+
+    The final dataset should include:
+
+    -   **Median Salary per Occupation**: For the y-axis.
+
+    -   **Percentage of Female Workers per Occupation**: For the x-axis.
+
+    -   **Total Number of Workers per Occupation**: For the size of the bubbles.
+
+## Inference
+
+-   Occupations with higher median salaries, especially those above \$150,000, generally have a lower proportion of female workers
+
+-   Many of the large bubbles are concentrated on the right side, where female workers are high but salaries are lower

@@ -1,0 +1,31 @@
+---
+title: "Day 6 (Populations, Samples, etc.)"
+---
+
+```{r}
+library(tidyverse)
+library(mosaic)
+library(ggformula)
+library(infer)
+library(broom)  
+library(resampledata) 
+library(openintro)
+```
+
+```{r}
+set.seed(40)  # for replication
+# Data as individual vectors ( for t.tests etc)
+y <- rnorm(50, mean = 2, sd = 2)
+
+# And as tibble too
+mydata <- tibble(y = y)
+mydata
+```
+
+```{r}
+#
+mydata %>%
+    gf_density(~y) %>%
+    gf_fitdistr(dist = "dnorm") %>%
+    gf_labs(title = "Densities of Original Data Variables", subtitle = "Compared with Normal Density")
+```

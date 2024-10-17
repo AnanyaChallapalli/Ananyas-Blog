@@ -1,0 +1,151 @@
+---
+title: "Case Studies"
+author: "Ananya C"
+---
+
+# Case Studies (A2 Assignment)
+
+```{r}
+library(tidyverse)
+library(mosaic)
+library(skimr)
+library(ggformula)
+library(ggridges)
+library(ggthemr)
+library(ggsci)
+library(dplyr)
+```
+
+# CASE STUDY 1: Ikea Furniture
+
+## Data Dictionary
+
+#### Qualitative Data
+
+-   item_id: unique id number for the item
+
+-   name: name of item
+
+-   category: product category eg. bed
+
+-   sellable online: if the item is available for online purchase
+
+-   link: URL to product page
+
+-   other_colours: other colour options
+
+-   short_description: description of product
+
+-   designer: designers of the items
+
+#### Quantitative Data
+
+-   price: price of the item
+
+-   old_price: previous price of the item
+
+-   depth: dimension
+
+-   height: dimension
+
+-   width: dimension
+
+-   price_usd: price converted to USD
+
+-   category_total: total number of items in that category
+
+### Target Variable
+
+-   price
+
+-   price_usd
+
+### Predictor Variables
+
+-   category
+
+-   sellable_online
+
+-   other_colours
+
+-   depth
+
+-   height
+
+-   width
+
+### Research Experiment
+
+The research experiment focuses on analyzing how product prices in various IKEA categories are distributed and whether the availability of other colors affects those prices.
+
+```{r}
+ikea <-read_delim(file = "../../data/ikea-modified.csv",delim = ';')
+ikea
+```
+
+I mutated the graph to make the category column as a factor and the price_usd as dbl(double) values.
+
+```{r}
+ikea_modified <- ikea %>% 
+   dplyr::mutate(price_usd = gsub("[^0-9.]", "", price_usd)) %>%
+  dplyr::mutate(category = as_factor(category),
+                price_usd = as.double(price_usd))
+glimpse(ikea_modified)
+
+```
+
+I created this graph with the help of ai. I created a density graph with facet wrap to show the density of items of different prices with each category of items being a separate graph. I used the scale_x_log10() function to stretch the graph out along the x axis. The scale of the x-axis of the graph is not right because it starts from 10\^3 and I was not able to fix this or understand the issue that has caused this.
+
+```{r}
+ikea_modified %>%
+  gf_density(~price_usd, fill = ~other_colors, color = "black") %>%
+  gf_refine(scale_x_log10(labels = scales::trans_format("log10", scales::math_format(10^.x)))) %>%
+  gf_facet_wrap(~category, scales = "free_y") %>%
+  gf_labs(
+    title = "Log10 Price distribution across IKEA categories",
+    subtitle = "Free y-scale for density plots",
+    caption = "ggformula"
+  ) %>%
+  gf_theme(theme(axis.text.x = element_text(angle = 45, hjust = 1)))
+
+```
+
+### Questions the graph may seek to answer
+
+-   What is the price distribution for different categories of items?
+
+-   What is the difference in price of items of single colour and multiple colours?
+
+-   Which categories and price ranges have higher number of single colour or multiple colour items?
+
+### Questions
+
+-   What is the kind of plot used in the chart?
+
+    density plot
+
+-   What variables have been used in the chart?
+
+    The price(USD) in the x-axis, the category of items in the y-axis and the density of the graph represent the number of each item.
+
+-   What can you say about the scale on X-axis?
+
+    The scale on the x-axis is logarithmic in nature as the values increase by powers of 10 instead of a constant amount.
+
+-   What can you say about prices of items that are available in *single colour* versus those that are available in more than one colour?
+
+    The items with more colour options tend to have a higher concentration of prices towards the middle and higher end of the price range. The generally tend to be priced higher than the single colour items in their respective categories.
+
+    The items with a single colour option show a broader spread with lower prices and higher priced items but they generally have lower number of items in the mid to high price range. They usually have more items in the low price category.
+
+-   What is a good hypothesis to interpret the double-humped nature of some of the curves?
+
+    There are different price brackets that an item could fall in, low-priced, mid-priced and high-priced. From the double humped nature of the graph, we can infer that there is a different price bracket for different consumers which usually lie on the budget friendly or higher end side. For consumers looking to buy budget friendly items, they will buy the cheaper products and for consumers looking to buy higher quality goods will look at the more expensive products. That is why there are generally fewer items in the mid price category.
+
+## Inference
+
+-   Items with colour options tend to be priced in the mid to high price range
+
+-   Single coloured items are more common in the low price range
+
+-   Some categories, like Outdoor Furniture, show a higher number of items in the lower price range, while others, like Beds and Wardrobes, display a wider price range, with more expensive products being more common

@@ -2,10 +2,16 @@
   {
     "listing": "/index.html",
     "items": [
+      "/posts/CaseStudies(A2)/index.html",
+      "/posts/CaseStudy-AntarcticSeaIce/index.html",
+      "/posts/CaseStudy-MovieProfits/index.html",
       "/posts/Day1/index.html",
       "/posts/Day2/index.html",
       "/posts/Day3/index.html",
       "/posts/Day4/index.html",
+      "/posts/Day5/index.html",
+      "/posts/Day5part2/index.html",
+      "/posts/Day6/index.html",
       "/posts/post-with-code/index.html",
       "/posts/welcome/index.html"
     ]

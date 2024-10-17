@@ -1,0 +1,147 @@
+---
+title: "Movie Profits"
+author: "Ananya C"
+---
+
+# CASE STUDY 2 : Movie Profits
+
+```{r}
+library(tidyverse)
+library(mosaic)
+library(skimr)
+library(ggformula)
+```
+
+```{r}
+movie <-read_delim(file = "../../data/movie_profit.csv")
+movie
+```
+
+## Variables and Data Dictionary
+
+### Qualitative Data
+
+-   release_date - date when movie was released
+
+-   movie - title of movie
+
+-   distributor - company responsible for distributing the movie
+
+-   mpaa_rating - the movie rating according to Motion Picture Association of America
+
+-   genre - genre of the movie
+
+-   decade - decade in which movie was released
+
+### Quantitative Data
+
+-   production_budget - budget allocated for producing the movie
+
+-   domestic_gross - gross revenue generated in the domestic market
+
+-   worldwide_gross - total revenue generated worldwide
+
+-   profit_ratio - the ratio of profit calculated based on movie's budget and earnings
+
+### Target Variable and Predictor Variables
+
+#### Target Variable (dependent variables)
+
+-   worldwide-gross
+
+-   profit-ratio
+
+#### Predictor Variables (independent variables)
+
+-   release-date
+
+-   movie
+
+-   production-budget
+
+-   domestic-gross
+
+-   distributor
+
+-   mpaa-rating
+
+-   genre
+
+-   decade
+
+### Research Experiment
+
+The goal of this research experiment is to understand the key factors that influence the profitability of movies. This is done by exploring how variables like release date, production budget, distributor and mpaa rating affect the profit ratio.
+
+```{r}
+median_profit_ratio <-movie %>%
+  group_by(genre) %>% 
+  summarise(median_profit_ratio = median(profit_ratio, na.rm = TRUE))
+movie
+```
+
+```{r}
+# Convert profit_ratio to numeric (fixing commas if necessary)
+movie$profit_ratio <- as.numeric(gsub(",", ".", movie$profit_ratio))
+
+# Group by distributor and genre, then calculate the median profit ratio
+profit_data <- movie %>%
+  group_by(distributor, genre) %>%
+  summarize(median_profit_ratio = median(profit_ratio, na.rm = TRUE)) %>%
+  filter(!is.na(median_profit_ratio))
+
+```
+
+```{r}
+ggplot(profit_data, aes(x = genre, y = median_profit_ratio)) +
+  geom_bar(stat = "identity", fill = "gray") +
+  facet_wrap(~ distributor, scales = "free") +
+  coord_flip() +
+  labs(
+    title = "Profits made by Film Distributors",
+    subtitle = "Ratio of Profits to Budgets",
+    x = "Genre",
+    y = "Median Profit Ratio"
+  ) +
+  theme(
+    strip.text = element_text(face = "bold"),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+```
+
+## Questions it seeks to answer
+
+Which genre of movies gains the most profit?
+
+Which genre of movies should you invest a higher budget in (which genre of movies get the highest return)?
+
+Which distributor has the highest and lowest profitability across different genres?
+
+How does the profitability of the same genre vary among distributors?
+
+## Questions
+
+### Identify the type of plot
+
+The type of plot is a bar graph
+
+### What are the variables used to plot this graph?
+
+The variables used to plot this graph are median profit ratio and genre and the facet represents the distributor of the film.
+
+### If you were to invest in movie production ventures, which are the two best genres that you might decide to invest in?
+
+Horror and Action are the two best genres that we might decide to invest in
+
+### Which R command might have been used to obtain the separate plots for each distributor?
+
+Facet_wrap command is used to obtain separate plots for each distributor
+
+### If the original dataset had BUDGETS and PROFITS in separate columns, what preprocessing might have been done to achieve this plot?
+
+In order to achieve the plot, the summarize command is used to find the median of the profit ratio which is the ratio of a movie's profit to its budget. The profit ratio can be obtained by finding the ratio of profit to budget as a separate column.
+
+movie\$profit_ratio \<- movie\$profit/movie\$budget
+
+## Inference

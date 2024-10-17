@@ -145,3 +145,7 @@ In order to achieve the plot, the summarize command is used to find the median o
 movie\$profit_ratio \<- movie\$profit/movie\$budget
 
 ## Inference
+
+-   Action and Horror films often generate the highest profit ratios across most distributors
+
+-   Drama tends to have lower profit ratios in comparison

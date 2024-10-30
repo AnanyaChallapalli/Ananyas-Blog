@@ -17,3 +17,5 @@ format:
 
 editor: visual
 
+df_print: paged
+

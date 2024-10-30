@@ -1,0 +1,254 @@
+---
+title: "Art,Design and Vocation are all Different"
+---
+
+```{r}
+library(knitr)
+library(tidyverse)
+library(ggformula)
+library(skimr)
+library(ggprism)
+library(kableExtra)
+library(mosaic)
+library(supernova)
+library(DescTools)
+library(broom)
+library(infer)
+library(patchwork)
+```
+
+```{r}
+grades <- read.csv("../../data/Art, Design, and Vocation are all diff.csv")
+grades
+```
+
+## Data Dictionary
+
+### Quantitative
+
+-   Score
+
+### Qualitative
+
+-   S.No
+
+-   Degree - B.Voc, B.Des or BFA
+
+-   Course
+
+-   Year
+
+-   Letter.grade
+
+-   Gender
+
+```{r}
+grades_modified <- grades %>%
+  dplyr::mutate(
+    Degree = as_factor(Degree),
+    Letter.Grade = as_factor(Letter.Grade),
+    Gender = as_factor(Gender)
+  )
+grades_modified
+```
+
+```{r}
+gf_histogram(~Score,
+  fill = ~Degree,
+  data = grades_modified, alpha = 0.5
+) %>%
+  gf_vline(xintercept = ~ mean(Score)) %>%
+  gf_labs(
+    title = "Histograms of Score vs Degree",
+    x = "Ratings", y = "Count"
+  ) %>%
+  gf_refine(guides(fill = guide_legend(title = "Score")))
+```
+
+### Inference
+
+-   B.Des seems to have higher grades than B.Voc and BFA
+
+-   The line shows the mean grades across all categories which is around 8
+
+-   Variance in each category seems to be more or less the same except for a few outliers in B.Des and B.Voc category
+
+```{r}
+gf_boxplot(
+  data = grades_modified,
+  Score ~ Degree,
+  fill = ~ Degree,
+  alpha = 0.5
+) %>%
+  gf_vline(xintercept = ~ mean(Score)) %>%
+  gf_labs(
+    title = "Boxplots of Score vs Degree",
+    x = "Degree", y = "Score",
+    caption = "Using ggprism"
+  ) %>%
+  gf_refine(
+    scale_x_discrete(guide = "prism_bracket"),
+    guides(fill = guide_legend(title = "Degree"))
+  )
+```
+
+### Inference
+
+-   The median of B.Des is higher than B.Voc and BFA, B.Voc and BFA have same median
+
+-   There are outliers below the boxplot in both B.Des and B.Voc
+
+-   The size of the box is almost the same for all three categories, suggesting that variance in each category is about the same
+
+```{r}
+grades_anova <- aov(Score ~ Degree, data = grades_modified)
+```
+
+```{r}
+supernova::pairwise(grades_anova,
+  correction = "Bonferroni", # Try "Tukey"
+  alpha = 0.05, # 95% CI calculation
+  var_equal = TRUE, # We'll see
+  plot = TRUE
+)
+```
+
+### Inference
+
+-   The difference between B.Voc and B.Des is the least (0.17) , then BFA and BVoc (0.58) and the most difference is between BFA and BDes (0.75)
+
+-   p-value is above 0.05 in the case of B.Voc and B.Des which tells us there is no significant difference between these two groups
+
+-   p-value is less than 0.05 in the other two differences which tells us there is a significant difference between BFA and BVoc and BFA and BDes
+
+```{r}
+supernova::equation(grades_anova)
+```
+
+```{r}
+shapiro.test(x = grades_modified$Score)
+```
+
+### Inference
+
+-   In the shapiro test for the grades, the p-value is very small which indicates that the score is not normally distributed
+
+```{r}
+grades_modified %>%
+  group_by(Degree) %>%
+  group_modify(~ .x %>%
+    select(Score) %>%
+    as_vector() %>%
+    shapiro.test() %>%
+      broom::tidy())
+```
+
+### Inference
+
+-   The p-values in all the categories are less than 0.05, indicating that the scores in B.Des, B.Voc and BFA are not normally distributed
+
+```{r}
+grades_anova$residuals %>%
+  as_tibble() %>%
+  gf_dhistogram(~value, data = .) %>%
+  gf_fitdistr()
+##
+grades_anova$residuals %>%
+  as_tibble() %>%
+  gf_qq(~value, data = .) %>%
+  gf_qqstep() %>%
+  gf_qqline()
+##
+shapiro.test(grades_anova$residuals)
+```
+
+### Inference
+
+-   histogram does not follow the bell curve and thus is not normally distributed
+
+-   there are multiple peaks in the histogram which again tells us that the data is not normally distributed
+
+-   From the qq-plot, the points curve downwards from the reference line, suggesting that the data is not normally distributed
+
+-   Since the p-value is less than 0.05, we reject the null hypothesis, suggesting that the residuals are not normally distributed
+
+```{r}
+grades_modified %>%
+  group_by(Degree) %>%
+  summarise(variance = var(Score))
+# Not too different...OK on with the test
+DescTools::LeveneTest(Score ~ Degree, data = grades_modified)
+##
+fligner.test(Score ~ Degree, data = grades_modified)
+```
+
+### Inference
+
+-   p-value in Levene's test and Fligner-Killeen Test are both greater than 0.05 which indicates that we can assume that the variances are equal across the the grades of the different degrees
+
+-   The variance is most for B.Des followed by B.Voc and then BFA, but the variances do not have significant differences
+
+```{r}
+grades_supernova <-
+  supernova::pairwise(grades_anova,
+    plot = TRUE,
+    alpha = 0.05,
+    correction = "Bonferroni"
+  )
+```
+
+```{r}
+grades_supernova
+```
+
+### Inference
+
+-   p-values less than 0.05 (after Bonferroni correction) indicate significant differences in ratings between grades in those categories.
+
+-   p-value is greater than 0.05 in the B.Voc & B.Des categeory which suggests insignificant differences in grades between these degrees
+
+-   p-value is less than 0.05 in case of B.Voc and BFA and B.Des and BFA which tells us that there is a significant differences between these degrees
+
+-   B.Des and B.Voc have similar grades to each other but they are both significantly greater than BFA
+
+```{r}
+observed_infer <-
+  grades_modified %>%
+  specify(Score ~ Degree) %>%
+  hypothesise(null = "independence") %>%
+  calculate(stat = "F")
+observed_infer
+```
+
+3.9 is the F-statistic for the test of dependence between Score and Degree.
+
+```{r}
+null_dist_infer <- grades_modified %>%
+  specify(Score ~ Degree) %>%
+  hypothesise(null = "independence") %>%
+  generate(reps = 4999, type = "permute") %>%
+  calculate(stat = "F")
+##
+null_dist_infer
+```
+
+```{r}
+null_dist_infer %>%
+  visualise(method = "simulation") +
+  shade_p_value(obs_stat = observed_infer$stat, direction = "right") +
+  scale_x_continuous(trans = "log10", expand = c(0, 0)) +
+  coord_cartesian(xlim = c(0.2, 500), clip = "off") +
+  annotation_logticks(outside = FALSE)
+```
+
+The red line indicates the observed f-statistic while the graph represents the null distribution of f-statistic using simulation
+
+### Inference
+
+-   since the shaded area at the right side of the red line is pretty small, this tells us that the observed f-statistic is not as likely under null hypothesis, indicating a significant result
+
+-   thus there is some evidence of dependence between score and degree
+
+## Conclusion
+
+B.Des has the highest grades but they are not significantly larger than B.Voc. B.Des and B.Voc have similar grades and they are both greater than BFA. This tells us that B.Des and B.Voc both perform better than BFA.

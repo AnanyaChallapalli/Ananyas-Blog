@@ -1,0 +1,272 @@
+---
+title: "Tips"
+---
+
+```{r}
+#| label: setup
+library(tidyverse)
+library(ggformula)
+library(crosstable)
+library(mosaic)
+```
+
+```{r}
+tips <- read.csv("../../data/tip.csv")
+tips
+```
+
+This dataset consists of one quant variable and 3 qual variables.
+
+### Data Dictionary
+
+-   Name: Qualitative
+
+-   Gender: Qualitative
+
+-   Food Preference: Qualitative
+
+-   Tip: Quantitative
+
+```{r}
+#converting gender and food preferance to factor
+tips <- tips %>%
+  dplyr::mutate(
+    Food.preferance = as_factor(Food.preferance),
+    Gender = as_factor(Gender)
+  )
+tips
+```
+
+```{r}
+tips %>%
+  gf_density(
+    ~ Tip,
+    fill = ~ Food.preferance,
+    alpha = 0.5,
+    title = "Tips",
+    subtitle = "Veg vs Non-veg"
+  )
+```
+
+### Inference
+
+-   Majority of people in veg and non veg category do not tip
+
+-   Veg category has more variance in tips
+
+-   There are two peaks in the non-veg category, at 0 and 20
+
+-   there is a pretty significant overlap in the veg and non veg graphs indicating that tipping habits in the two groups are similar
+
+```{r}
+tips %>% crosstable(Tip~Food.preferance)%>% as_flextable()
+```
+
+### Inference
+
+-   The median of tipping of veg and non-veg is the same, the means are also almost the same with veg being slightly higher
+
+-   from this, we can infer that there is not much difference in the tipping habits of both groups
+
+-   Veg has a much higher max tip value than non-veg
+
+```{r}
+tips %>%
+  gf_density(
+    ~ Tip,
+    fill = ~ Food.preferance,
+    alpha = 0.5,
+    title = "Math Anxiety Score Densities",
+    subtitle = "Boys vs Girls"
+  )
+tips %>% 
+gf_boxplot(
+    Tip ~ Food.preferance,
+    fill = ~ Food.preferance,
+    alpha = 0.5,
+    title = "Math Anxiety Score Box Plots",
+    subtitle = "Boys vs Girls"
+  ) 
+
+tips %>% count(Food.preferance)
+tips %>% 
+  group_by(Food.preferance) %>% 
+  summarise(mean = mean(Tip))
+```
+
+### Inference
+
+-   median value is zero according to the box plot
+
+-   there is only one outlier in the veg category, indicating that one person has paid a significantly higher tip than the others
+
+-   box size and position of veg and non-veg categories are almost the same, indicating that the similar tipping behavior in both categories with a similar amount of variance
+
+```{r}
+gf_histogram(~Tip,fill=~	
+Food.preferance,data=tips)
+```
+
+### Inference
+
+-   Again, most people do not tip :(
+
+-   Non-veg people tip more around the 20 rupees category while there is more variance for veg tippers which ranges from 0 -100
+
+```{r}
+gf_histogram(~Tip,data=tips,fill = ~Gender)
+```
+
+### Inference
+
+-   More variation in tipping amount by female tippers
+
+-   Females generally tip a slightly higher amount (though not significantly higher) except for one outlier in the male category
+
+```{r}
+tips %>%
+  gf_density( ~ Tip,
+              fill = ~ Food.preferance,
+              alpha = 0.5,
+              title = "Tips based on food preference") %>%
+  gf_facet_grid(~ Food.preferance) %>% 
+  gf_fitdistr(dist = "dnorm") 
+##
+tips %>% 
+  gf_qqline(~ Tip, color = ~ Gender,
+            title = "Tips...Is it Normally Distributed?") %>%
+  gf_qq() %>% 
+  gf_facet_wrap(~ Food.preferance) 
+
+```
+
+Inference
+
+-   the graph is skewed to the left in both veg and non-veg category
+
+-   the density curve does not align with the normal fit curve which suggests the distribution may not be normal
+
+-   In qq plot, most points deviate from the line suggesting that the data is not normally distributed
+
+### Veg Tips
+
+```{r}
+tipsveg <- tips %>% filter(Food.preferance == "Veg")
+tipsveg
+```
+
+### Non veg Tips
+
+```{r}
+tipsnonveg <- tips %>% filter(Food.preferance == "Non-veg")
+tipsnonveg
+```
+
+### Shapiro Test for Veg Tips
+
+```{r}
+result_Tipveg <- shapiro.test(tipsveg$Tip)
+print(result_Tipveg)
+```
+
+#### Inference
+
+-   Since the p-value is less than 0.05, it indicates that the data significantly deviates from a normal distribution. This means that the veg tips are not normally distributed
+
+### Shapiro Test for Non-veg Tips
+
+```{r}
+result_Tipnonveg <- shapiro.test(tipsnonveg$Tip)
+print(result_Tipnonveg)
+```
+
+-   Since the p-value is less than 0.05, it indicates that the data significantly deviates from a normal distribution. This means that the non-veg tips are not normally distributed
+
+### T-Test of Tips based on Food Preference
+
+The mosaic::t_test function performs a two-sample t-test by default, assuming that the variances between the two groups are equal. It tests whether there is a significant difference in the means of the tip amounts for veg and non-veg.
+
+```{r}
+mosaic::t_test(Tip~Food.preferance,data=tips)
+```
+
+### Inference
+
+-   Since p value is greater than 0.05, it indicates that there is no significant difference between the groups, which indicates similar tipping behaviour in veg and non veg categories.
+
+-   Thus null hypothesis cannot be rejected
+
+### Permutation Test for Tips based on food preference
+
+This test helps assess if the observed difference in Tip means between the Veg and Non-veg groups is statistically significant. By comparing the observed mean difference from the original data set to the resampling distribution we can determine if the observed difference is likely due to random chance.
+
+```{r}
+obs_diff_tips <- 
+  do(4999) * diffmean(data = tips, Tip ~ shuffle(Food.preferance))
+obs_diff_tips
+```
+
+```{r}
+mosaic::t_test(Tip~Food.preferance,data=tips) %>% broom::tidy()
+```
+
+```{r}
+tip_permutation <- diffmean(Tip ~ Food.preferance, data = tips)
+glimpse(tip_permutation)
+```
+
+This indicates that the mean difference between veg and non veg tips is 2.33 with veg being 2.33 more than non veg. This shows that on average, veg tips 2.33 more than non veg.
+
+```{r}
+gf_histogram(data = obs_diff_tips, ~ diffmean, bins = 25) %>%
+  gf_vline(xintercept = tip_permutation, 
+           colour = "red", linewidth = 1,
+           title = "Null Distribution by Permutation", 
+           subtitle = "Histogram") %>% 
+  gf_labs(x = "Difference in Means")
+
+gf_ecdf(data = obs_diff_tips, ~ diffmean, 
+        linewidth = 1) %>%
+  gf_vline(xintercept = tip_permutation, 
+           colour = "red", linewidth = 1,
+           title = "Null Distribution by Permutation", 
+           subtitle = "Cumulative Density") %>% 
+  gf_labs(x = "Difference in Means")
+```
+
+### Inference
+
+-   The red line in the graph represents the observed difference in means of the two categories (i.e, -2.33)
+
+-   the histogram represents the null distribution from the permutation tests
+
+-   Since the red line falls within the central range of the null distribution, we can assume that the difference was due to random chance
+
+-   This indicates that the difference between veg and non veg tips is not statistically significant
+
+-   In ECDF plot, a cumulative probability near the tails for the observed difference would indicate significance which would make the value unlikely under null hypothesis
+
+-   Since the red line is near the center and closer to 0, it suggests that the difference is common under null hypothesis. This means it is not statistically significant
+
+### Wilcox Test
+
+A test used to compare the medians of two independent groups. It is used when the data does not meet the assumptions of normality or homogeneity of variances required by a t-test
+
+```{r}
+wilcox.test(Tip ~ Food.preferance, data = tips, 
+            conf.int = TRUE, 
+            conf.level = 0.95) %>% 
+  broom::tidy()
+```
+
+### Inference
+
+-   since p-value is greater than 0.05, there is insufficient evidence to suggest a difference in median tips between veg and non veg groups
+
+-   the confidence interval shows the range of possible median differences. Since the confidence interval contains 0 within its bounds, this means there is no significant difference between the groups
+
+## Conclusion
+
+-   The data is not normally distributed
+
+-   There is no significant difference between the tipping habits of veg and non-veg people

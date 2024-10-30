@@ -1,0 +1,232 @@
+---
+title: "Pocket Money"
+---
+
+```{r}
+#| label: setup
+library(tidyverse)
+library(ggformula)
+library(crosstable)
+library(mosaic)
+```
+
+```{r}
+pmoney <- read.csv("../../data/PocketMoney.csv")
+pmoney
+```
+
+This dataset consists of 1 quant and 3 qual variables
+
+### Data Dictionary
+
+-   S.No - Qualitative
+
+-   Name - Qualitative
+
+-   Gender - Qualitative
+
+-   Money_Spent - Quantitative
+
+```{r}
+pmoney_modified <-pmoney %>% 
+  dplyr::mutate(
+    Gender = as_factor(Gender)
+  )
+pmoney_modified
+```
+
+```{r}
+pmoney_modified %>%
+  gf_density(
+    ~ Money_spent,
+    fill = ~ Gender,
+    alpha = 0.5,
+    title = "Money spent",
+    subtitle = "Male vs Female"
+  )
+pmoney_modified %>%
+  gf_boxplot(
+    Money_spent ~ Gender,
+    fill = ~ Gender,
+    alpha = 0.5,
+    title = "Math Anxiety Score Box Plots",
+    subtitle = "Boys vs Girls"
+  ) 
+##
+pmoney_modified %>% count(Gender)
+pmoney_modified %>% 
+  group_by(Gender) %>% 
+  summarise(mean = mean(Money_spent))
+```
+
+### Inference
+
+-   Majority of people, men and female included spend around 0 to a few hundreds per day
+
+-   Men seem to spend a little more than women not including outliers
+
+-   There is a pretty big overlap in general in the male and female category
+
+-   The graph is left-skewed with one peak
+
+-   In boxplot, median value is similar in both categories
+
+-   There is more variance in the male category above the median
+
+-   There are few outliers in both categories
+
+-   Mean money spent of male (748.6) is larger than female (693.3)which means on average, males spend more
+
+```{r}
+gf_histogram(~Money_spent,fill=~	
+Gender,data=pmoney_modified,bins = 100)
+```
+
+### Inference
+
+-   most people spend from around 0 to a few hundreds
+
+-   most people spend under 2000 per day expect a few outliers
+
+-   males on average spend slightly more than females
+
+```{r}
+pmoney_modified %>%
+  gf_density( ~ Money_spent,
+              fill = ~ Gender,
+              alpha = 0.5,
+              title = "Money spent for males and females") %>%
+  gf_facet_grid(~ Gender) %>% 
+  gf_fitdistr(dist = "dnorm") 
+##
+pmoney_modified %>% 
+  gf_qqline(~ Money_spent, color = ~ Gender,
+            title = "Money Spent..is it Normally Distributed?") %>%
+  gf_qq() %>% 
+  gf_facet_wrap(~ Gender)  # independent y-axis
+##
+male_moneyspent <- pmoney_modified %>% 
+  filter(Gender== "Male") %>% 
+  select(Money_spent)
+##
+female_moneyspent <- pmoney_modified %>% 
+  filter(Gender== "Female") %>% 
+  select(Money_spent)
+```
+
+### Inference
+
+-   both of the graphs are left skewed for both male and female
+
+-   the density curve of both graphs do not align with the normal fit curve which suggests the distribution may not be normal
+
+-   In the qq plot, the dots are close to the normal but do not align perfectly to it, there are also outliers in both categories
+
+```{r}
+shapiro.test(male_moneyspent$Money_spent)
+shapiro.test(female_moneyspent$Money_spent)
+```
+
+### Inference
+
+-   Since the p-value is less than 0.05 in both categories, it indicates that the data significantly deviates from a normal distribution. This means that the money spent by males and that spent by females are both not normally distributed
+
+## Variance Test
+
+var.test() is designed to perform an F-test to compare the variances of two groups
+
+```{r}
+var.test(Money_spent ~ Gender, data = pmoney_modified, 
+         conf.int = TRUE, conf.level = 0.95) %>% 
+  broom::tidy()
+
+```
+
+### Inference
+
+-   since the p-value is higher than 0.05, there is not significant difference in variance between the two groups
+
+```{r}
+qf(0.646,40,40)
+
+```
+
+This output indicates that about 64.6% of the area under the F-distribution curve with the specified degrees of freedom lies to the left of this value.
+
+```{r}
+mosaic::t_test(Money_spent ~ Gender, data = pmoney_modified) %>% 
+  broom::tidy()
+```
+
+### Inference
+
+-   Since p value is greater than 0.05, it indicates that there is no significant difference between the groups, which indicates similar money spending behaviour in male and female categories.
+
+-   Thus null hypothesis cannot be rejected
+
+```{r}
+wilcox.test(Money_spent ~ Gender, data = pmoney_modified, 
+            conf.int = TRUE, 
+            conf.level = 0.95) %>% 
+  broom::tidy()
+```
+
+-   since p-value is greater than 0.05, there is insufficient evidence to suggest a difference in median money spent between male and female groups
+
+-   the confidence interval shows the range of possible median differences. Since the confidence interval contains 0 within its bounds, this means there is no significant difference between the groups
+
+## Permutation Test
+
+```{r}
+null_dist_moneyspent <- 
+  do(4999) * diffmean(data = pmoney_modified, Money_spent ~ shuffle(Gender))
+null_dist_moneyspent
+```
+
+```{r}
+obs_diff_moneyspent <- diffmean(Money_spent ~ Gender, data = pmoney_modified) 
+obs_diff_moneyspent
+```
+
+-   Difference between the mean of money spent in females and males is 55.29
+
+```{r}
+gf_histogram(data = null_dist_moneyspent, ~ diffmean, bins = 25) %>%
+  gf_vline(xintercept = obs_diff_moneyspent, 
+           colour = "red", linewidth = 1,
+           title = "Null Distribution by Permutation", 
+           subtitle = "Histogram") %>% 
+  gf_labs(x = "Difference in Means")
+###
+gf_ecdf(data = null_dist_moneyspent, ~ diffmean, 
+        linewidth = 1) %>%
+  gf_vline(xintercept = obs_diff_moneyspent, 
+           colour = "red", linewidth = 1,
+           title = "Null Distribution by Permutation", 
+           subtitle = "Cumulative Density") %>% 
+  gf_labs(x = "Difference in Means")
+```
+
+### Inference
+
+-   The red line in the graph represents the observed difference in means of the two categories (i.e, -55.29)
+
+-   the histogram represents the null distribution from the permutation tests
+
+-   Since the red line falls within the central range of the null distribution, we can assume that the difference was due to random chance
+
+-   This tells us that the difference between money spent by male and female is not statistically significant
+
+```{r}
+1-prop1(~ diffmean <= obs_diff_moneyspent, data = null_dist_moneyspent)
+```
+
+-   There is a 56.4% chance that a difference in means equal to or greater than obs_diff_moneyspent could occur under the null hypothesis.
+
+-   since the p-value is higher than 0.05, the observed difference is statistically insignificant, and we cannot reject the null hypothesis
+
+## Conclusion
+
+From our data we can say males on average spend more than women though it is not a significant amount
+
+There is no significant difference between the spending habits of males and females

@@ -1,0 +1,255 @@
+---
+title: "Chhota Bheem vs Doraemon vs Dragon Tales"
+---
+
+```{r}
+library(knitr)
+library(tidyverse)
+library(ggformula)
+library(skimr)
+library(ggprism)
+library(kableExtra)
+library(mosaic)
+library(supernova)
+library(DescTools)
+library(broom)
+library(infer)
+library(patchwork)
+```
+
+```{r}
+cartoon <- read.csv("../../data/ChhotaBheemvsDoraemonvsDragonTales(Sheet1).csv")
+cartoon
+```
+
+```{r}
+cartoon_modified <- cartoon %>%
+  dplyr::mutate(
+    Gender = as_factor(Gender),
+    Cartoon = as_factor(Cartoon)
+  )
+cartoon_modified
+```
+
+### Data Dictionary
+
+### Quantitative:
+
+Rating- the number assigned as the rating of the show per participant
+
+### Qualitative:
+
+Gender
+
+Cartoon- Name of Cartoon
+
+```{r}
+gf_histogram(~Rating,
+  fill = ~Cartoon,
+  data = cartoon_modified, alpha = 0.5
+) %>%
+  gf_vline(xintercept = ~ mean(Rating)) %>%
+  gf_labs(
+    title = "Histograms of Ratings vs Cartoon",
+    x = "Ratings", y = "Count"
+  ) %>%
+  gf_refine(guides(fill = guide_legend(title = "Cartoon")))
+```
+
+### Inference
+
+-   varying number of ratings between the cartoons
+
+-   line down the graph shows the overall mean of the ratings given across the cartoons
+
+-   Doreamon has highest ratings
+
+-   Dragon Tales has a pretty standard distribution across the ratings
+
+```{r}
+gf_boxplot(
+  data = cartoon_modified,
+  Rating ~ Cartoon,
+  fill = ~Cartoon,
+  alpha = 0.5
+) %>%
+  gf_vline(xintercept = ~ mean(Rating)) %>%
+  gf_labs(
+    title = "Boxplots of Rating vs Cartoon",
+    x = "Temperature", y = "Hatching Time",
+    caption = "Using ggprism"
+  ) %>%
+  gf_refine(
+    scale_x_discrete(guide = "prism_bracket"),
+    guides(fill = guide_legend(title = "Temperature level (°C)"))
+  )
+```
+
+### Inference
+
+-   Doraemon has the highest median ratings, then dragon tales and then Chota Bheem
+
+-   The size of the box is bigger for doraemon indicating a higher variance in ratings, which indicates more varied opinions, some like it a lot while others don't as much
+
+-   Both doraemon and dragon tales have an outlier in the lower side
+
+## ANOVA Test
+
+```{r}
+cartoon_anova <- aov(Rating ~ Cartoon, data = cartoon_modified)
+```
+
+The code provided runs an Analysis of Variance (ANOVA) test to evaluate whether there are statistically significant differences in the mean ratings across different cartoons. The result is stored in cartoon_anova, which can be further analyzed to examine the difference in ratings of each cartoon
+
+```{r}
+supernova::pairwise(cartoon_anova,
+  correction = "Bonferroni", # Try "Tukey"
+  alpha = 0.05, # 95% CI calculation
+  var_equal = TRUE, # We'll see
+  plot = TRUE
+)
+```
+
+The supernova::pairwise function runs pairwise comparisons on the ANOVA results, allowing you to see which specific cartoon pairs differ significantly in their mean ratings. It also gives us the confidence interval for each pair which tells us whether the observed differences are significant with 95 percent confidence
+
+### Inference
+
+-   Difference between chota bheem and dragon tales and chota bheem and doraemon are both 0.58 while that between dragon tales and doraemon is 0.008 (a negligible amount)
+
+-   p-value is above 0.05 for each pair, indicating that there is no significant difference in the ratings of each cartoon
+
+-   The confidence interval contain zero in all 3 of the pairs, indicating that there is a statistically insignificant difference between the cartoon ratings
+
+```{r}
+supernova::equation(cartoon_anova)
+```
+
+```{r}
+shapiro.test(x = cartoon_modified$Rating)
+```
+
+Since the p-value is **less than 0.05**, we reject the null hypothesis, indicating that Rating is not normally distributed.
+
+```{r}
+cartoon_modified %>%
+  group_by(Cartoon) %>%
+  group_modify(~ .x %>%
+    select(Rating) %>%
+    as_vector() %>%
+    shapiro.test() %>%
+      broom::tidy())
+```
+
+-   In the group wise distributions we can see that Doraemon and Dragon Tales have p-value less than 0.05 which mean that the data is not normally distributed and we can reject the null hypothesis
+
+-   In the case of Chota Bheem the p-value is greater than 0.05 indicating that we cannot reject the null hypothesis and the data is normally distributed
+
+```{r}
+cartoon_anova$residuals %>%
+  as_tibble() %>%
+  gf_dhistogram(~value, data = .) %>%
+  gf_fitdistr()
+##
+cartoon_anova$residuals %>%
+  as_tibble() %>%
+  gf_qq(~value, data = .) %>%
+  gf_qqstep() %>%
+  gf_qqline()
+##
+shapiro.test(cartoon_anova$residuals)
+```
+
+### Inference
+
+-   histogram does not follow the bell curve and thus is not normally distributed
+
+-   there are multiple peaks in the histogram which again suggests that the data is not normally distributed
+
+-   From the qq-plot, the points curve downwards from the reference line, suggesting that the data is not normally distributed
+
+-   Since the p-value is less than 0.05, we reject the null hypothesis, suggesting that the residuals are not normally distributed
+
+```{r}
+cartoon_modified %>%
+  group_by(Cartoon) %>%
+  summarise(variance = var(Rating))
+# Not too different...OK on with the test
+DescTools::LeveneTest(Rating ~ Cartoon, data = cartoon_modified)
+##
+fligner.test(Rating ~ Cartoon, data = cartoon_modified)
+```
+
+summarise(variance = var(Rating)) is used to calculate the variance of the rating variable for each level of the cartoon variable.
+
+Levene's Test is a statistical test used to assess whether the variances across different groups are equal.
+
+The Fligner-Killeen test is another test for assessing the homogeneity of variances
+
+### Inferences
+
+-   p-value in Levene's test and Fligner-Killeen Test are both greater than 0.05 which indicates that we can assume that the variances are equal across the different levels of the cartoon variable
+
+-   The variance is most for Doraemon followed by Dragon Tales and then Chota Bheem, but the variances do not have significant differences
+
+-   This is an important assumption for ANOVA test to be valid
+
+```{r}
+cartoon_supernova <-
+  supernova::pairwise(cartoon_anova,
+    plot = TRUE,
+    alpha = 0.05,
+    correction = "Bonferroni"
+  )
+```
+
+```{r}
+cartoon_supernova
+```
+
+-   p-values less than 0.05 (after Bonferroni correction) indicate significant differences in ratings between those cartoons.
+
+-   Since p-values are above 0.05 in all cases, we can conclude that there are no significant differences in ratings between the cartoons
+
+```{r}
+observed_infer <-
+  cartoon_modified %>%
+  specify(Rating ~ Cartoon) %>%
+  hypothesise(null = "independence") %>%
+  calculate(stat = "F")
+observed_infer
+```
+
+0.92 is the F-statistic for the test of dependence between Rating and Cartoon.
+
+```{r}
+null_dist_infer <- cartoon_modified %>%
+  specify(Rating ~ Cartoon) %>%
+  hypothesise(null = "independence") %>%
+  generate(reps = 4999, type = "permute") %>%
+  calculate(stat = "F")
+##
+null_dist_infer
+```
+
+```{r}
+null_dist_infer %>%
+  visualise(method = "simulation") +
+  shade_p_value(obs_stat = observed_infer$stat, direction = "right") +
+  scale_x_continuous(trans = "log10", expand = c(0, 0)) +
+  coord_cartesian(xlim = c(0.2, 500), clip = "off") +
+  annotation_logticks(outside = FALSE)
+```
+
+The red line indicates the observed f-statistic while the graph represents the null distribution of f-statistic using simulation
+
+### Inference
+
+-   since the shaded area at the right side of the red line is large, this tells us that the observed f-statistic is likely under null hypothesis, indicating a non-significant result
+
+-   thus there is no strong evidence of dependence between rating and cartoon
+
+## Conclusion
+
+There is no significant difference between the ratings of the three cartoons. Thus we can conclude that people have similar opinions on each of the cartoons
+
+That being said, Doraemon still has the highest rating though it is not significant.
